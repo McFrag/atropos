@@ -1,0 +1,5 @@
+{
+  "bucket": "my-atropos-cold-storage",
+  "region": "us-east-1",
+  "prefix": "blobs"
+}

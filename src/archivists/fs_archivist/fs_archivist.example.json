@@ -1,0 +1,5 @@
+{
+  "storage_path": "/mnt/cold-storage/atropos",
+  "lock_retry_wait_seconds": 1,
+  "lock_retry_count": 3
+}
