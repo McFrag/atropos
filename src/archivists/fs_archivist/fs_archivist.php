@@ -1,5 +1,10 @@
 <?php
 
+require_once 'archivist.php';
+require_once 'op_result.php';
+require_once 'fetch_result.php';
+require_once 'hash_util.php';
+
 /**
  * Filesystem-backed cold storage. Files are stored under a path derived
  * from the popcount of each 32-bit word of the content hash, plus the

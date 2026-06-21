@@ -1,11 +1,15 @@
 <?php
 
-require_once __DIR__ . '/hash_util.php';
-require_once __DIR__ . '/op_result.php';
-require_once __DIR__ . '/data_token.php';
-require_once __DIR__ . '/fetch_result.php';
-require_once __DIR__ . '/blob_token.php';
-require_once __DIR__ . '/archivist.php';
+// All requires below rely on `src/` being in PHP's include path, so bare
+// filenames resolve regardless of which directory the including script
+// lives in.
+require_once 'hash_util.php';
+require_once 'op_result.php';
+require_once 'data_token.php';
+require_once 'fetch_result.php';
+require_once 'blob_token.php';
+require_once 'archivist.php';
+require_once 'archivist_loader.php';
 
 /**
  * Main orchestrator for the blob storage system. Public surface is
@@ -322,11 +326,7 @@ class librarian
     private function get_archivist()
     {
         if ($this->archivist_instance === null) {
-            $class = $this->options['archivist']['class'];
-            $config_file = $this->options['archivist']['config_file'];
-
-            $this->archivist_instance = new $class();
-            $this->archivist_instance->init($config_file);
+            $this->archivist_instance = archivist_loader::load($this->options['archivist']);
         }
 
         return $this->archivist_instance;

@@ -18,6 +18,7 @@
 
   "archivist": {
     "class": "fs_archivist",
+    "path": "archivists/fs_archivist/fs_archivist.php",
     "config_file": "/etc/atropos/fs_archivist.json"
   }
 }

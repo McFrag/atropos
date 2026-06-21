@@ -1,8 +1,12 @@
 <?php
 
-require_once __DIR__ . '/../src/hash_util.php';
-require_once __DIR__ . '/../src/op_result.php';
-require_once __DIR__ . '/../src/archivist.php';
+// Bare filenames, relying on `src/` being in PHP's include path.
+require_once 'hash_util.php';
+require_once 'op_result.php';
+require_once 'data_token.php';
+require_once 'fetch_result.php';
+require_once 'archivist.php';
+require_once 'archivist_loader.php';
 
 /**
  * Runs every 1 minute (schedule this script via system crontab).
@@ -29,11 +33,8 @@ if ($options === null) {
 
 $db = get_db_connection($options); // implement per chosen driver
 
-$archivist_class = $options['archivist']['class'];
-$archivist_config = $options['archivist']['config_file'];
 /** @var archivist $archivist */
-$archivist = new $archivist_class();
-$archivist->init($archivist_config);
+$archivist = archivist_loader::load($options['archivist']);
 
 $error_threshold = (int) $options['cold_storage_error_threshold'];
 $batch_size = (int) ($options['cron_batch_size'] ?? 5);

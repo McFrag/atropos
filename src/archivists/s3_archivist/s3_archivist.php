@@ -1,5 +1,10 @@
 <?php
 
+require_once 'archivist.php';
+require_once 'op_result.php';
+require_once 'fetch_result.php';
+require_once 'hash_util.php';
+
 /**
  * S3-backed cold storage. Requires the AWS SDK for PHP
  * (aws/aws-sdk-php) to be available via composer autoload.
