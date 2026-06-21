@@ -1,5 +1,6 @@
 {
     "atropos":{
-        "path":"../../src"
+        "path":"../../src",
+        "config":"../../config/config.example.json"
     }
 }

@@ -1,15 +1,6 @@
 #!/usr/bin/env php
 <?php
 
-// This file lives in atropos/cli/, one level below the project root,
-// as a sibling of atropos/src/ -- not inside it. So unlike files within
-// src/ (which rely on src/ being in PHP's include path), this entry
-// point resolves its dependencies explicitly relative to its own
-// location, since a bare include path is not guaranteed for a
-// standalone CLI invocation.
-require_once __DIR__ . '/../src/librarian.php';
-require_once __DIR__ . '/../src/data_token.php';
-
 /**
  * atropos_cli -- command line interface to librarian.
  *
@@ -24,18 +15,29 @@ require_once __DIR__ . '/../src/data_token.php';
  *     on failure (see exit codes below).
  *
  * Configuration:
- *   The librarian options are read from a JSON file named
- *   "atropos_config.json" in the process's current working directory
- *   (i.e. wherever the CLI is invoked from -- not relative to this
- *   script's own location).
+ *   The CLI reads a bootstrap file named "atropos_cli.json" from the
+ *   process's current working directory. This file is DIFFERENT from
+ *   the librarian options file -- it only tells the CLI how to find
+ *   librarian itself and which options file to hand it:
+ *
+ *     {
+ *       "atropos": {
+ *         "path": "../../src",                       // where librarian.php lives
+ *         "config": "../../config/config.example.json" // librarian's own options file
+ *       }
+ *     }
+ *
+ *   Both "path" and "config" are resolved relative to the directory
+ *   atropos_cli.json itself lives in (not the CLI's own __DIR__, and
+ *   not the process's CWD beyond locating atropos_cli.json itself).
  *
  * Exit codes:
  *   0  success
- *   1  usage error (bad/missing arguments, or missing config)
+ *   1  usage error (bad/missing arguments, or missing/invalid bootstrap config)
  *   2  operation failed (error reported by librarian)
  */
 
-const CONFIG_FILENAME = 'atropos_config.json';
+const BOOTSTRAP_FILENAME = 'atropos_cli.json';
 
 function usage_and_exit($message = null)
 {
@@ -88,6 +90,21 @@ function read_handle($handle_arg)
     return rtrim($handle, "\n");
 }
 
+/**
+ * Resolves a path that may be relative, against $base_dir.
+ *
+ * @param string $path
+ * @param string $base_dir
+ * @return string
+ */
+function resolve_path($path, $base_dir)
+{
+    if ($path === '' || $path[0] === '/') {
+        return $path; // already absolute (or empty -- caller's problem)
+    }
+    return rtrim($base_dir, '/') . '/' . $path;
+}
+
 // -----------------------------------------------------------------------
 
 if ($argc < 2) {
@@ -96,18 +113,34 @@ if ($argc < 2) {
 
 $command = $argv[1];
 
-// Resolved against the CURRENT WORKING DIRECTORY of the process, not
-// this script's own location -- so the CLI must be run from wherever
-// atropos_config.json actually lives.
-$config_file = getcwd() . '/' . CONFIG_FILENAME;
+$bootstrap_file = getcwd() . '/' . BOOTSTRAP_FILENAME;
 
-if (!is_file($config_file) || !is_readable($config_file)) {
-    fwrite(STDERR, "cannot read config file: {$config_file}\n");
-    fwrite(STDERR, "(expected '" . CONFIG_FILENAME . "' in the current directory)\n");
+if (!is_file($bootstrap_file) || !is_readable($bootstrap_file)) {
+    fwrite(STDERR, "cannot read bootstrap config file: {$bootstrap_file}\n");
+    fwrite(STDERR, "(expected '" . BOOTSTRAP_FILENAME . "' in the current directory)\n");
     exit(1);
 }
 
-$librarian = new librarian($config_file);
+$bootstrap = json_decode(file_get_contents($bootstrap_file), true);
+
+if (!isset($bootstrap['atropos']['path'], $bootstrap['atropos']['config'])) {
+    fwrite(STDERR, "bootstrap config file is missing 'atropos.path' or 'atropos.config': {$bootstrap_file}\n");
+    exit(1);
+}
+
+$bootstrap_dir = dirname($bootstrap_file);
+$src_path = resolve_path($bootstrap['atropos']['path'], $bootstrap_dir);
+$librarian_options_file = resolve_path($bootstrap['atropos']['config'], $bootstrap_dir);
+
+require_once rtrim($src_path, '/') . '/librarian.php';
+require_once rtrim($src_path, '/') . '/data_token.php';
+
+if (!is_file($librarian_options_file) || !is_readable($librarian_options_file)) {
+    fwrite(STDERR, "cannot read librarian options file: {$librarian_options_file}\n");
+    exit(1);
+}
+
+$librarian = new librarian($librarian_options_file);
 
 switch ($command) {
     case 'add_blob':
